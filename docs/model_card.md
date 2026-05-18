@@ -46,7 +46,7 @@ The model predicts whether a bank customer is likely to churn. It is designed fo
 1. Identifier columns are dropped: `RowNumber`, `CustomerId`, `Surname`.
 2. Numerical values are imputed with median and scaled with `StandardScaler`.
 3. Categorical values are imputed with most frequent value and encoded with `OneHotEncoder`.
-4. Data is split into train and test sets with stratification.
+4. Data is split into train, validation, and test sets with stratification.
 5. Logistic Regression, Random Forest (`class_weight="balanced"`), and Gradient Boosting are trained.
 6. The best model is selected by F1-score (balances precision and recall).
 7. An optimal classification threshold is computed using the precision-recall curve.
@@ -58,18 +58,18 @@ Current local metrics from `models/model_metadata.json`:
 
 | Metric | Value |
 | --- | ---: |
-| Accuracy | 0.842 |
-| Precision | 0.6066 |
-| Recall | 0.6364 |
-| F1-score | 0.6211 |
-| ROC-AUC | 0.8584 |
-| Optimal Threshold | 0.4774 |
+| Accuracy | 0.848 |
+| Precision | 0.6359 |
+| Recall | 0.5921 |
+| F1-score | 0.6132 |
+| ROC-AUC | 0.8613 |
+| Optimal Threshold | 0.5217 |
 
 Confusion matrix:
 
 ```text
-[[1425, 168],
- [148, 259]]
+[[1455, 138],
+ [166, 241]]
 ```
 
 ## Limitations

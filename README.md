@@ -108,20 +108,22 @@ The pipeline:
 4. Scales numerical features and one-hot encodes categorical features.
 5. Trains Logistic Regression, Random Forest, and Gradient Boosting.
 6. Selects the best model by F1-score to balance precision and recall.
-7. Saves artifacts to `models/`.
+7. Tunes the decision threshold on the validation set.
+8. Reports final metrics on the held-out test set.
+9. Saves artifacts to `models/`.
 
 Current local training result:
 
 ```json
 {
   "best_model": "RandomForestClassifier",
-  "accuracy": 0.842,
-  "precision": 0.6066,
-  "recall": 0.6364,
-  "f1_score": 0.6211,
-  "roc_auc": 0.8584,
-  "optimal_threshold": 0.4774,
-  "confusion_matrix": [[1425, 168], [148, 259]]
+  "accuracy": 0.848,
+  "precision": 0.6359,
+  "recall": 0.5921,
+  "f1_score": 0.6132,
+  "roc_auc": 0.8613,
+  "optimal_threshold": 0.5217,
+  "confusion_matrix": [[1455, 138], [166, 241]]
 }
 ```
 

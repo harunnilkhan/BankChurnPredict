@@ -104,7 +104,12 @@ def train_pipeline(data_path: str = None, output_dir: str = "models") -> dict:
 
     # Print detailed report for best model
     print(f"\n[STEP 6b] Detailed report for {best_model_name}:")
-    print_classification_report(best_model, X_test_processed, y_test)
+    print_classification_report(
+        best_model,
+        X_test_processed,
+        y_test,
+        threshold=best_metrics.get("optimal_threshold", 0.5)
+    )
 
     # --- Step 7: Save Artifacts ---
     print("\n[STEP 7] Saving model artifacts...")

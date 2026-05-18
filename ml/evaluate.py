@@ -175,7 +175,12 @@ def compare_models(results: dict, primary_metric: str = "f1_score") -> str:
     return best_model
 
 
-def print_classification_report(model, X_test: np.ndarray, y_test: np.ndarray) -> None:
+def print_classification_report(
+    model,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    threshold: float = 0.5,
+) -> None:
     """
     Print a detailed classification report for a model.
 
@@ -183,8 +188,14 @@ def print_classification_report(model, X_test: np.ndarray, y_test: np.ndarray) -
         model: Trained scikit-learn model.
         X_test: Preprocessed test features.
         y_test: True test labels.
+        threshold: Decision threshold to use for probability predictions.
     """
-    y_pred = model.predict(X_test)
+    if hasattr(model, "predict_proba"):
+        y_proba = model.predict_proba(X_test)[:, 1]
+        y_pred = (y_proba >= threshold).astype(int)
+    else:
+        y_pred = model.predict(X_test)
+
     target_names = ["No Churn (0)", "Churn (1)"]
     report = classification_report(y_test, y_pred, target_names=target_names)
     print("\nClassification Report:")
