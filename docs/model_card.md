@@ -19,7 +19,7 @@ The model predicts whether a bank customer is likely to churn. It is designed fo
 
 | Field | Value |
 | --- | --- |
-| Dataset | Bank Customer Churn Dataset |
+| Dataset | [Bank Customer Churn Dataset (Kaggle)](https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset) |
 | Full data path | `data/raw/churn.csv` |
 | Sample data path | `data/sample/sample_churn.csv` |
 | Target | `Exited` |

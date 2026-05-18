@@ -73,7 +73,7 @@ More detail is available in [docs/architecture.md](docs/architecture.md).
 
 ## Dataset
 
-The project uses a bank customer churn dataset with the target column `Exited`.
+The project uses the [Bank Customer Churn Prediction Dataset](https://www.kaggle.com/datasets/saurabhbadole/bank-customer-churn-prediction-dataset) from Kaggle, with the target column `Exited`.
 
 Input features:
 
