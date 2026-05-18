@@ -12,8 +12,12 @@ from datetime import datetime
 class HealthResponse(BaseModel):
     """Health check response."""
 
+    model_config = {"protected_namespaces": ()}
+
     status: str = Field(..., examples=["ok"])
     service: str = Field(..., examples=["BankChurnPredict API"])
+    model_loaded: bool = Field(..., examples=[True])
+    database_connected: bool = Field(..., examples=[True])
 
 
 class MetricsDetail(BaseModel):

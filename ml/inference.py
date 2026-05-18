@@ -102,6 +102,7 @@ def predict_single(input_data: dict) -> dict:
     """
     _validate_records([input_data])
     model, preprocessor, metadata = load_artifacts()
+    threshold = metadata.get("optimal_threshold", 0.5)
 
     # Convert input to DataFrame for preprocessing
     df = pd.DataFrame([input_data])
@@ -109,13 +110,12 @@ def predict_single(input_data: dict) -> dict:
     # Preprocess
     X_processed = preprocessor.transform(df)
 
-    # Predict
-    prediction = int(model.predict(X_processed)[0])
-
-    # Get probability
+    # Get probability and apply optimal threshold
     if hasattr(model, "predict_proba"):
         probability = float(model.predict_proba(X_processed)[0][1])
+        prediction = int(probability >= threshold)
     else:
+        prediction = int(model.predict(X_processed)[0])
         probability = float(prediction)
 
     # Build response
@@ -141,6 +141,7 @@ def predict_batch(input_data: list) -> list:
     """
     _validate_records(input_data)
     model, preprocessor, metadata = load_artifacts()
+    threshold = metadata.get("optimal_threshold", 0.5)
 
     # Convert to DataFrame
     df = pd.DataFrame(input_data)
@@ -148,13 +149,12 @@ def predict_batch(input_data: list) -> list:
     # Preprocess
     X_processed = preprocessor.transform(df)
 
-    # Predict
-    predictions = model.predict(X_processed)
-
-    # Get probabilities
+    # Get probabilities and apply optimal threshold
     if hasattr(model, "predict_proba"):
         probabilities = model.predict_proba(X_processed)[:, 1]
+        predictions = (probabilities >= threshold).astype(int)
     else:
+        predictions = model.predict(X_processed)
         probabilities = predictions.astype(float)
 
     # Build results

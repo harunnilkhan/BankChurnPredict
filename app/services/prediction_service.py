@@ -10,8 +10,13 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 from app.services.model_loader import model_loader
-from app.services.history_service import save_prediction_log
+from app.services.history_service import save_prediction_log, save_prediction_logs_bulk
 from app.core.logging import logger
+
+
+def _get_threshold() -> float:
+    """Return the optimal threshold from model metadata, defaulting to 0.5."""
+    return model_loader.metadata.get("optimal_threshold", 0.5)
 
 
 def make_single_prediction(input_data: dict, db: Session) -> dict:
@@ -32,13 +37,13 @@ def make_single_prediction(input_data: dict, db: Session) -> dict:
         # Preprocess
         X_processed = model_loader.preprocessor.transform(df)
 
-        # Predict
-        prediction = int(model_loader.model.predict(X_processed)[0])
-
-        # Get probability
+        # Get probability and apply optimal threshold
+        threshold = _get_threshold()
         if hasattr(model_loader.model, "predict_proba"):
             probability = float(model_loader.model.predict_proba(X_processed)[0][1])
+            prediction = int(probability >= threshold)
         else:
+            prediction = int(model_loader.model.predict(X_processed)[0])
             probability = float(prediction)
 
         # Build result
@@ -54,7 +59,7 @@ def make_single_prediction(input_data: dict, db: Session) -> dict:
 
         logger.info(
             f"Prediction made: {result['label']} "
-            f"(prob={result['probability']:.4f})"
+            f"(prob={result['probability']:.4f}, threshold={threshold})"
         )
 
         return result
@@ -82,20 +87,20 @@ def make_batch_prediction(instances: list, db: Session) -> list:
         # Preprocess
         X_processed = model_loader.preprocessor.transform(df)
 
-        # Predict
-        predictions = model_loader.model.predict(X_processed)
-
-        # Get probabilities
+        # Get probabilities and apply optimal threshold
+        threshold = _get_threshold()
         if hasattr(model_loader.model, "predict_proba"):
             probabilities = model_loader.model.predict_proba(X_processed)[:, 1]
+            predictions = (probabilities >= threshold).astype(int)
         else:
+            predictions = model_loader.model.predict(X_processed)
             probabilities = predictions.astype(float)
 
         model_version = model_loader.metadata.get("model_version", "unknown")
 
-        # Build results and log each prediction
+        # Build results
         results = []
-        for i, (pred, prob) in enumerate(zip(predictions, probabilities)):
+        for pred, prob in zip(predictions, probabilities):
             pred_int = int(pred)
             result = {
                 "prediction": pred_int,
@@ -105,8 +110,8 @@ def make_batch_prediction(instances: list, db: Session) -> list:
             }
             results.append(result)
 
-            # Log each prediction
-            save_prediction_log(db, instances[i], result)
+        # Bulk log all predictions in a single commit
+        save_prediction_logs_bulk(db, instances, results)
 
         logger.info(f"Batch prediction completed: {len(results)} predictions made.")
 

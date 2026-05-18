@@ -25,12 +25,14 @@ def get_model_candidates() -> dict:
             max_iter=1000,
             random_state=42,
             solver="lbfgs",
+            class_weight="balanced",
         ),
         "RandomForestClassifier": RandomForestClassifier(
             n_estimators=200,
             max_depth=10,
             random_state=42,
             n_jobs=-1,
+            class_weight="balanced",
         ),
         "GradientBoostingClassifier": GradientBoostingClassifier(
             n_estimators=200,
@@ -132,6 +134,7 @@ def build_metadata(
         "problem_type": "binary_classification",
         "target_column": target_column,
         "best_model": best_model_name,
+        "optimal_threshold": metrics.get("optimal_threshold", 0.5),
         "metrics": {
             "accuracy": metrics["accuracy"],
             "precision": metrics["precision"],

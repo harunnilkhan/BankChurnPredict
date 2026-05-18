@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="sqlite:///./bankchurnpredict.db", alias="DATABASE_URL"
     )
+    cors_origins: str = Field(
+        default="http://localhost:8501,http://localhost:8000",
+        alias="CORS_ORIGINS",
+        description="Comma-separated list of allowed CORS origins. Use '*' for development.",
+    )
 
     model_config = ConfigDict(
         env_file=".env",

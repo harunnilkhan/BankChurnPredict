@@ -99,8 +99,12 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the dataset by:
     - Dropping identifier columns (RowNumber, CustomerId, Surname)
-    - Handling missing values
     - Ensuring correct data types
+
+    Missing value imputation is intentionally NOT done here to avoid data
+    leakage. The SimpleImputer inside build_preprocessor() handles imputation
+    after the train/test split so that statistics are fitted only on the
+    training set.
 
     Args:
         df: Raw DataFrame.
@@ -115,25 +119,13 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     df.drop(columns=cols_to_drop, inplace=True)
     print(f"[INFO] Dropped columns: {cols_to_drop}")
 
-    # Handle missing values - fill numerical with median, categorical with mode
-    for col in df.select_dtypes(include=[np.number]).columns:
-        if df[col].isnull().sum() > 0:
-            median_val = df[col].median()
-            df[col] = df[col].fillna(median_val)
-            print(f"[INFO] Filled missing values in '{col}' with median: {median_val}")
-
-    for col in df.select_dtypes(include=["object"]).columns:
-        if df[col].isnull().sum() > 0:
-            mode_val = df[col].mode()[0]
-            df[col] = df[col].fillna(mode_val)
-            print(f"[INFO] Filled missing values in '{col}' with mode: {mode_val}")
-
     # Ensure target column is integer (binary 0/1)
     if TARGET_COLUMN in df.columns:
         df[TARGET_COLUMN] = df[TARGET_COLUMN].astype(int)
 
+    missing_count = df.isnull().sum().sum()
     print(f"[INFO] Cleaned dataset shape: {df.shape}")
-    print(f"[INFO] Missing values remaining: {df.isnull().sum().sum()}")
+    print(f"[INFO] Missing values (will be handled by preprocessor): {missing_count}")
 
     return df
 

@@ -11,16 +11,20 @@ client = TestClient(app)
 
 def test_health_check_returns_200():
     """Test that /health returns status code 200."""
-    response = client.get("/health")
-    assert response.status_code == 200
+    with TestClient(app) as client:
+        response = client.get("/health")
+        assert response.status_code == 200
 
 
 def test_health_check_response_body():
     """Test that /health returns expected JSON body."""
-    response = client.get("/health")
-    data = response.json()
-    assert data["status"] == "ok"
-    assert data["service"] == "BankChurnPredict API"
+    with TestClient(app) as client:
+        response = client.get("/health")
+        data = response.json()
+        assert data["status"] == "ok"
+        assert data["service"] == "BankChurnPredict API"
+        assert data["model_loaded"] is True
+        assert data["database_connected"] is True
 
 
 def test_root_endpoint():

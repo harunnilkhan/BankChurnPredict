@@ -53,6 +53,49 @@ def save_prediction_log(
         raise
 
 
+def save_prediction_logs_bulk(
+    db: Session,
+    inputs: list[dict],
+    results: list[dict],
+) -> None:
+    """
+    Save multiple prediction logs in a single database transaction.
+
+    More efficient than calling save_prediction_log() in a loop because
+    it performs a single commit for all records.
+
+    Args:
+        db: Database session.
+        inputs: List of input feature dictionaries.
+        results: List of prediction result dictionaries.
+    """
+    try:
+        entries = []
+        now = datetime.utcnow()
+
+        for input_data, result in zip(inputs, results):
+            entries.append(
+                PredictionLog(
+                    input_data=json.dumps(input_data, default=str),
+                    prediction=result["prediction"],
+                    label=result["label"],
+                    probability=result["probability"],
+                    model_version=result["model_version"],
+                    created_at=now,
+                )
+            )
+
+        db.add_all(entries)
+        db.commit()
+
+        logger.debug(f"Bulk logged {len(entries)} predictions.")
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to bulk save prediction logs: {e}")
+        raise
+
+
 def get_prediction_history(
     db: Session,
     limit: int = 20,

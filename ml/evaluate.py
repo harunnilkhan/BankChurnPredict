@@ -14,7 +14,34 @@ from sklearn.metrics import (
     roc_auc_score,
     confusion_matrix,
     classification_report,
+    precision_recall_curve,
 )
+
+
+def _find_optimal_threshold(y_test: np.ndarray, y_proba: np.ndarray) -> float:
+    """
+    Find the probability threshold that maximises F1-score on the test set
+    using the precision-recall curve.
+
+    Args:
+        y_test: True labels.
+        y_proba: Predicted probabilities for the positive class.
+
+    Returns:
+        Optimal threshold value (float).
+    """
+    precisions, recalls, thresholds = precision_recall_curve(y_test, y_proba)
+
+    # precision_recall_curve returns arrays where the last precision/recall
+    # entry has no corresponding threshold, so we slice to match lengths.
+    f1_scores = np.where(
+        (precisions[:-1] + recalls[:-1]) > 0,
+        2 * (precisions[:-1] * recalls[:-1]) / (precisions[:-1] + recalls[:-1]),
+        0.0,
+    )
+
+    best_idx = np.argmax(f1_scores)
+    return float(thresholds[best_idx])
 
 
 def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> dict:
@@ -27,7 +54,7 @@ def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> dict:
         y_test: True test labels.
 
     Returns:
-        Dictionary containing all evaluation metrics.
+        Dictionary containing all evaluation metrics and optimal threshold.
     """
     y_pred = model.predict(X_test)
 
@@ -35,9 +62,11 @@ def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> dict:
     if hasattr(model, "predict_proba"):
         y_proba = model.predict_proba(X_test)[:, 1]
         roc_auc = roc_auc_score(y_test, y_proba)
+        optimal_threshold = _find_optimal_threshold(y_test, y_proba)
     else:
         y_proba = None
         roc_auc = None
+        optimal_threshold = 0.5
 
     metrics = {
         "accuracy": round(accuracy_score(y_test, y_pred), 4),
@@ -46,23 +75,27 @@ def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> dict:
         "f1_score": round(f1_score(y_test, y_pred, zero_division=0), 4),
         "roc_auc": round(roc_auc, 4) if roc_auc is not None else None,
         "confusion_matrix": confusion_matrix(y_test, y_pred).tolist(),
+        "optimal_threshold": round(optimal_threshold, 4),
     }
 
     return metrics
 
 
-def compare_models(results: dict, primary_metric: str = "roc_auc") -> str:
+def compare_models(results: dict, primary_metric: str = "f1_score") -> str:
     """
     Compare multiple model results and return the name of the best model.
 
+    Uses f1_score by default because it balances precision and recall,
+    which is critical for imbalanced churn prediction problems.
+
     Args:
         results: Dictionary of {model_name: metrics_dict}.
-        primary_metric: Metric to use for comparison (default: roc_auc).
+        primary_metric: Metric to use for comparison (default: f1_score).
 
     Returns:
         Name of the best-performing model.
     """
-    fallback_metric = "f1_score"
+    fallback_metric = "roc_auc"
 
     best_model = None
     best_score = -1.0

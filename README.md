@@ -115,12 +115,13 @@ Current local training result:
 ```json
 {
   "best_model": "RandomForestClassifier",
-  "accuracy": 0.8675,
-  "precision": 0.8318,
-  "recall": 0.4373,
-  "f1_score": 0.5733,
-  "roc_auc": 0.8612,
-  "confusion_matrix": [[1557, 36], [229, 178]]
+  "accuracy": 0.842,
+  "precision": 0.6066,
+  "recall": 0.6364,
+  "f1_score": 0.6211,
+  "roc_auc": 0.8584,
+  "optimal_threshold": 0.4774,
+  "confusion_matrix": [[1425, 168], [148, 259]]
 }
 ```
 
