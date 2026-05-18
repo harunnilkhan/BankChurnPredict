@@ -1,0 +1,25 @@
+{
+  "project_name": "BankChurnPredict",
+  "model_version": "v1.0.0",
+  "problem_type": "binary_classification",
+  "target_column": "Exited",
+  "best_model": "RandomForestClassifier",
+  "metrics": {
+    "accuracy": 0.8675,
+    "precision": 0.8318,
+    "recall": 0.4373,
+    "f1_score": 0.5733,
+    "roc_auc": 0.8612,
+    "confusion_matrix": [
+      [
+        1557,
+        36
+      ],
+      [
+        229,
+        178
+      ]
+    ]
+  },
+  "created_at": "2026-05-13 23:01:24"
+}
