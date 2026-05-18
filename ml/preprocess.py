@@ -237,6 +237,57 @@ def create_train_test_split(
     return X_train, X_test, y_train, y_test
 
 
+def create_train_val_test_split(
+    X: pd.DataFrame,
+    y: pd.Series,
+    val_size: float = 0.2,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> tuple:
+    """
+    Split features and target into train, validation, and test sets.
+
+    The split is performed in two stratified steps so that class proportions
+    are preserved in all three partitions:
+
+        1. Hold out ``test_size`` of the full dataset as the test set.
+        2. Hold out ``val_size`` of the **remaining** data as the validation
+           set (which equals ``val_size * (1 - test_size)`` of the original).
+
+    With defaults (val_size=0.2, test_size=0.2) the effective split is
+    approximately **64 % train / 16 % validation / 20 % test**.
+
+    The validation set is used exclusively for threshold selection after
+    training. Final performance is reported on the held-out test set.
+
+    Args:
+        X: Feature DataFrame.
+        y: Target Series.
+        val_size: Proportion of the *remaining* data (after test split) to
+            reserve for validation.
+        test_size: Proportion of the *full* dataset to reserve for testing.
+        random_state: Random seed for reproducibility.
+
+    Returns:
+        Tuple of (X_train, X_val, X_test, y_train, y_val, y_test).
+    """
+    # Step 1: hold out the test set from the full dataset
+    X_temp, X_test, y_temp, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+
+    # Step 2: hold out the validation set from the remaining data
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_temp, y_temp, test_size=val_size, random_state=random_state, stratify=y_temp
+    )
+
+    print(f"[INFO] Train set:      {X_train.shape[0]} samples ({X_train.shape[0] / len(X):.0%})")
+    print(f"[INFO] Validation set: {X_val.shape[0]} samples ({X_val.shape[0] / len(X):.0%})")
+    print(f"[INFO] Test set:       {X_test.shape[0]} samples ({X_test.shape[0] / len(X):.0%})")
+
+    return X_train, X_val, X_test, y_train, y_val, y_test
+
+
 def get_processed_feature_names(
     preprocessor: ColumnTransformer,
     n_features: int,

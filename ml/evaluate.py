@@ -18,19 +18,22 @@ from sklearn.metrics import (
 )
 
 
-def _find_optimal_threshold(y_test: np.ndarray, y_proba: np.ndarray) -> float:
+def _find_optimal_threshold(y_true: np.ndarray, y_proba: np.ndarray) -> float:
     """
-    Find the probability threshold that maximises F1-score on the test set
-    using the precision-recall curve.
+    Find the probability threshold that maximises F1-score using the
+    precision-recall curve.
+
+    Should be called with a **validation** set so that threshold selection
+    remains independent of the held-out test set used for final reporting.
 
     Args:
-        y_test: True labels.
-        y_proba: Predicted probabilities for the positive class.
+        y_true: True labels (validation set).
+        y_proba: Predicted probabilities for the positive class (validation set).
 
     Returns:
         Optimal threshold value (float).
     """
-    precisions, recalls, thresholds = precision_recall_curve(y_test, y_proba)
+    precisions, recalls, thresholds = precision_recall_curve(y_true, y_proba)
 
     # precision_recall_curve returns arrays where the last precision/recall
     # entry has no corresponding threshold, so we slice to match lengths.
@@ -44,27 +47,70 @@ def _find_optimal_threshold(y_test: np.ndarray, y_proba: np.ndarray) -> float:
     return float(thresholds[best_idx])
 
 
-def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray) -> dict:
+def evaluate_model(
+    model,
+    X_test: np.ndarray,
+    y_test: np.ndarray,
+    *,
+    X_val: np.ndarray = None,
+    y_val: np.ndarray = None,
+) -> dict:
     """
     Evaluate a trained classification model on test data.
+
+    Threshold selection strategy
+    ----------------------------
+    When ``X_val`` and ``y_val`` are provided the optimal decision threshold
+    is determined on the **validation set** and only *applied* to the test
+    set.  This prevents the test set from being used for both model selection
+    and performance reporting, which would produce overly optimistic metrics.
+
+    When no validation set is supplied (legacy / quick-eval mode) the
+    threshold is found on the test set itself — acceptable for exploration
+    but not recommended for final reporting.
+
+    All classification metrics (accuracy, precision, recall, F1, confusion
+    matrix) are computed from the **threshold-adjusted** predictions so that
+    the reported figures match the actual inference behaviour of the API.
 
     Args:
         model: Trained scikit-learn model.
         X_test: Preprocessed test features.
         y_test: True test labels.
+        X_val: Preprocessed validation features (keyword-only, optional).
+        y_val: True validation labels (keyword-only, optional).
 
     Returns:
-        Dictionary containing all evaluation metrics and optimal threshold.
+        Dictionary containing all evaluation metrics and the optimal threshold.
     """
-    y_pred = model.predict(X_test)
-
-    # Get probability scores for ROC-AUC
     if hasattr(model, "predict_proba"):
         y_proba = model.predict_proba(X_test)[:, 1]
         roc_auc = roc_auc_score(y_test, y_proba)
-        optimal_threshold = _find_optimal_threshold(y_test, y_proba)
+
+        if X_val is not None and y_val is not None:
+            # Preferred path: threshold selected on validation set
+            y_val_proba = model.predict_proba(X_val)[:, 1]
+            optimal_threshold = _find_optimal_threshold(
+                np.asarray(y_val), y_val_proba
+            )
+            print(
+                f"[INFO] Threshold tuned on validation set: {optimal_threshold:.4f}"
+            )
+        else:
+            # Fallback: threshold selected on test set (exploration mode)
+            optimal_threshold = _find_optimal_threshold(
+                np.asarray(y_test), y_proba
+            )
+            print(
+                "[WARN] No validation set provided — threshold tuned on test set. "
+                "Reported metrics may be slightly optimistic."
+            )
+
+        # Apply threshold to produce final predictions
+        y_pred = (y_proba >= optimal_threshold).astype(int)
     else:
-        y_proba = None
+        # Model without probability support — fall back to hard predictions
+        y_pred = model.predict(X_test)
         roc_auc = None
         optimal_threshold = 0.5
 

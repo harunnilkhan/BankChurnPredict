@@ -36,5 +36,6 @@ async def get_model_info() -> ModelInfoResponse:
         target_column=metadata.get("target_column", "Exited"),
         best_model=metadata.get("best_model", "unknown"),
         metrics=metrics,
+        optimal_threshold=metadata.get("optimal_threshold", 0.5),
         created_at=metadata.get("created_at", "unknown"),
     )

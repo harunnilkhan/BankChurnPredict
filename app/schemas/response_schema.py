@@ -45,6 +45,12 @@ class ModelInfoResponse(BaseModel):
     target_column: str = Field(..., examples=["Exited"])
     best_model: str = Field(..., examples=["RandomForestClassifier"])
     metrics: MetricsDetail
+    optimal_threshold: float = Field(
+        ...,
+        examples=[0.4774],
+        description="Decision threshold applied during inference. Predictions are "
+        "labelled Churn when P(churn) >= this value.",
+    )
     created_at: str = Field(..., examples=["2026-05-13 12:00:00"])
 
 

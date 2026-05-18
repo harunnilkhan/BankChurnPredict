@@ -20,7 +20,7 @@ The current use case is bank customer churn prediction. The model predicts wheth
 
 - CSV data loading, cleaning, missing-value handling, encoding, and scaling
 - Model comparison across Logistic Regression, Random Forest, and Gradient Boosting
-- Automatic best-model selection using ROC-AUC with F1-score fallback
+- Automatic best-model selection using F1-score, with ROC-AUC as fallback
 - Saved model, preprocessor, and metadata artifacts
 - Reusable inference module independent from FastAPI
 - FastAPI endpoints for health, model info, single prediction, batch prediction, and prediction history
@@ -107,7 +107,7 @@ The pipeline:
 3. Imputes missing values.
 4. Scales numerical features and one-hot encodes categorical features.
 5. Trains Logistic Regression, Random Forest, and Gradient Boosting.
-6. Selects the best model by ROC-AUC.
+6. Selects the best model by F1-score to balance precision and recall.
 7. Saves artifacts to `models/`.
 
 Current local training result:

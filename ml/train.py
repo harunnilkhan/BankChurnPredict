@@ -18,7 +18,7 @@ from ml.preprocess import (
     clean_data,
     split_features_target,
     build_preprocessor,
-    create_train_test_split,
+    create_train_val_test_split,
     save_processed_sample,
     resolve_data_path,
     CATEGORICAL_FEATURES,
@@ -55,15 +55,16 @@ def train_pipeline(data_path: str = None, output_dir: str = "models") -> dict:
     print("\n[STEP 2] Splitting features and target...")
     X, y = split_features_target(df, TARGET_COLUMN)
 
-    # --- Step 3: Train/Test Split ---
-    print("\n[STEP 3] Creating train/test split...")
-    X_train, X_test, y_train, y_test = create_train_test_split(X, y)
+    # --- Step 3: Train / Validation / Test Split ---
+    print("\n[STEP 3] Creating train / validation / test split (64 / 16 / 20)...")
+    X_train, X_val, X_test, y_train, y_val, y_test = create_train_val_test_split(X, y)
 
     # --- Step 4: Build and Fit Preprocessor ---
     print("\n[STEP 4] Building preprocessing pipeline...")
     preprocessor = build_preprocessor(CATEGORICAL_FEATURES, NUMERICAL_FEATURES)
     X_train_processed = preprocessor.fit_transform(X_train)
-    X_test_processed = preprocessor.transform(X_test)
+    X_val_processed   = preprocessor.transform(X_val)
+    X_test_processed  = preprocessor.transform(X_test)
     print(f"[INFO] Processed feature shape: {X_train_processed.shape}")
     processed_sample_path = save_processed_sample(
         X_train_processed,
@@ -82,8 +83,14 @@ def train_pipeline(data_path: str = None, output_dir: str = "models") -> dict:
         model.fit(X_train_processed, y_train)
         trained_models[name] = model
 
-        # Evaluate
-        metrics = evaluate_model(model, X_test_processed, y_test)
+        # Evaluate on test set; threshold is selected on the validation set
+        metrics = evaluate_model(
+            model,
+            X_test_processed,
+            y_test,
+            X_val=X_val_processed,
+            y_val=y_val,
+        )
         evaluation_results[name] = metrics
         print(f"    Accuracy: {metrics['accuracy']:.4f}")
         print(f"    F1-Score: {metrics['f1_score']:.4f}")
